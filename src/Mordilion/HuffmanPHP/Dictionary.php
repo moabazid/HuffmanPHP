@@ -20,6 +20,7 @@ use InvalidArgumentException;
  */
 class Dictionary
 {
+    use SortTrait;
     public const MAX_LENGTH_WHOLE_WORDS = 0;
 
     /**
@@ -155,6 +156,7 @@ class Dictionary
 
     /**
      * @param array $values
+     * @throws \Exception
      */
     private function calculateOccurrences(array $values): void
     {
@@ -183,7 +185,13 @@ class Dictionary
             }
         }
 
-        ksort($occurrences);
+        if (version_compare(phpversion(), '8.0.0', '<')) {
+            ksort($occurrences);
+        } else {
+            krsort($occurrences);
+            $occurrences = array_reverse($occurrences);
+        }
+
         $this->sortByCount($occurrences);
 
         while (count($occurrences) > 1) {
@@ -248,11 +256,18 @@ class Dictionary
 
     /**
      * @param array $occurrences
+     * @throws \Exception
      */
     private function sortByCount(array &$occurrences): void
     {
-        usort($occurrences, static function (array $left, array $right) {
-            return (int) $left['count'] <=> (int) $right['count'];
-        });
+        if (version_compare(phpversion(), '8.0.0', '<')) {
+            usort($occurrences, static function (array $left, array $right) {
+                return (int)$left['count'] <=> (int)$right['count'];
+            });
+        } else {
+            $this->usort74($occurrences, static function (array $left, array $right) {
+                return (int)$left['count'] <=> (int)$right['count'];
+            });
+        }
     }
 }
